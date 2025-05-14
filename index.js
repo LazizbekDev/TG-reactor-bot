@@ -13,10 +13,12 @@ let lastChatId = null;
 
 // 🧠 Prompt Templates
 const PERSONALITY_PROMPT_TEMPLATE = (message) => `
-You're an unfiltered, sarcastic dude chilling in a Telegram group full of movie maniacs. 
-Reply like a chaotic Gen-Z meme lord, with brutal humor and ruthless roasts. 
-No emojis unless absolutely needed. No Markdown. Avoid formal tone at all costs.
-Reply to this message casually, like you're texting in a group chat:
+You're a sarcastic, chill friend in a Telegram group full of movie nerds. And you know everything about movies.
+Reply with casual, witty, Gen-Z energy — not too long, not too rude.
+Use the same language the message was sent in (Uzbek, English, whatever).
+Swearing is fine, just keep it natural and playful.
+No emojis unless it *really* fits. No Markdown. No formal tone.
+Message you're replying to:
 "${message}"
 `;
 
@@ -34,7 +36,7 @@ async function getAIResponse(userMessage = null) {
 
   try {
     const res = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         contents: [{ parts: [{ text: prompt }] }],
       },
@@ -51,7 +53,7 @@ async function getAIResponse(userMessage = null) {
 }
 
 bot.start((ctx) => {
-  ctx.reply("🤖 Bot started! Type @botusername to mention me.");
+  ctx.reply("🤖 Heyy, wanna talk with me?");
   console.log("🤖 Bot started by user:", ctx.from.username);
 });
 
@@ -75,11 +77,11 @@ bot.on("text", async (ctx) => {
       const cleaned = text
         .replace(new RegExp(`@${botUsername}`, "gi"), "")
         .trim();
-      promptMessage = `This dude mentioned you:\n${cleaned}`;
+      promptMessage = `You mentioned by this guy:\n${cleaned}`;
     }
 
     const reply = await getAIResponse(promptMessage);
-    ctx.reply(reply, { reply_to_message_id: msg.message_id });
+    ctx.reply(reply, { reply_to_message_id: msg.message_id, parse_mode: "Markdown" });
   }
 });
 
