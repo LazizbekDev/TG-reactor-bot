@@ -23,9 +23,11 @@ Message you're replying to:
 `;
 
 const RANDOM_MESSAGE_PROMPT = `
-Send a random dark, sarcastic, savage message like you're chilling in a Telegram group full of movie nerds.
-Use meme-style humor, Gen-Z slang, and don't be polite.
-Only in casual English.
+Image you're in a chat group, you're just a real member of the chat and the group is film discussion group, you know everything about films.
+you just keep alive the group, like an extravert person, just ask something like regular people, it shouldn't be too long, just a few words!
+No emojis unless it *really* fits. No Markdown. No formal tone.
+Just be a real person, like a friend.
+You can ask about the latest movies, or just say something like "hey guys, what are you watching these days?" or "any recommendations for a good movie?" or "what's your favorite film of all time?" or "have you seen any good movies lately?" or "what's the best movie you've seen this month?" or "what's your favorite genre of film?" or "who's your favorite actor/actress?" or "what's the most underrated movie you've seen?" or "what's the most overrated movie you've seen?" or "what's the best movie you've seen this year?" or "what's the worst movie you've seen this year?"
 `;
 
 // 🤖 Gemini response
@@ -58,31 +60,33 @@ bot.start((ctx) => {
 });
 
 // 💬 Reply on trigger
-bot.on("text", async (ctx) => {
+bot.on("message", async (ctx) => {
   const msg = ctx.message;
-  const text = msg.text || "";
-  lastChatId = msg.chat.id;
-  console.log("🤖 Message received:", text);
+  const replied = msg.reply_to_message;
 
-  const botUsername = ctx.botInfo.username.toLowerCase();
-  const isMentioned = text.toLowerCase().includes(`@${botUsername}`);
-  const isReplyToBot =
-    msg.reply_to_message?.from?.username?.toLowerCase() === botUsername;
-  const hasQuestionMark = text.includes("?");
+  if (!replied) return; // Faqat reply qilingan xabarlar
 
-  if (isMentioned || isReplyToBot || hasQuestionMark) {
-    let promptMessage = text;
-
-    if (isMentioned) {
-      const cleaned = text
-        .replace(new RegExp(`@${botUsername}`, "gi"), "")
-        .trim();
-      promptMessage = `You mentioned by this guy:\n${cleaned}`;
-    }
-
-    const reply = await getAIResponse(promptMessage);
-    ctx.reply(reply, { reply_to_message_id: msg.message_id, parse_mode: "Markdown" });
+  let origin = null;
+  if (replied.from) {
+    origin = replied.from.username || replied.from.first_name;
+  } else if (replied.sender_chat) {
+    origin = replied.sender_chat.title || replied.sender_chat.username;
   }
+
+  const repliedContent = replied.text || replied.caption || "[media]";
+
+  // Mention qilish uchun usernameni olamiz
+  const user = ctx.from;
+  const mention = user.username
+    ? `@${user.username}`
+    : `[${user.first_name}](tg://user?id=${user.id})`;
+
+  const response = `${user.first_name} commented to the "${origin}" post, he/she said:\n${ctx.message.text}\nTo this post:"${repliedContent}"`;
+  const aiReply = await getAIResponse(response);
+  await ctx.reply(aiReply, {
+    parse_mode: "Markdown",
+    reply_to_message_id: msg.message_id, // reply qilib yuboradi
+  });
 });
 
 // 🔁 Auto random reply every 5–10 hours
