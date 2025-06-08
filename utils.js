@@ -1,9 +1,10 @@
 import axios from "axios";
 
 export const getAIReactionForMessage = async (text, validEmojis) => {
-  const prompt = `You're a chaotic-good Gen-Z emoji reactor who replies like a TikTok commenter. Based on the vibe and energy of the following message, return **only ONE emoji** from this list:\n\n${allEmojis.join(
-    ", "
-  )}\n\nMessage: "${text}"\n\nPick the emoji that best matches the mood — whether it's 🥴, 👀, 😭, 💅, 🤡, 💯, 🐳, or 🦄. Stay funny, unhinged, but relatable. No explanation, just the emoji.`;
+const prompt = `Choose an emoji from this list:\n${validEmojis.join(", ")}\n
+Now, don't be basic. I want something that surprises the reader, maybe even makes them laugh — but it should still kinda make sense for this message:\n"${text}"
+
+Give me one emoji only, nothing else. Be clever. Be chaotic.`;
 
   try {
     const res = await axios.post(
