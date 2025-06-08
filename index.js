@@ -23,12 +23,15 @@ const getAvailableReactions = async (chatId) => {
     const result = await bot.telegram.getChat(chatId);
     const reactions = result.available_reactions;
 
-    if (Array.isArray(reactions) && reactions.length > 0) {
-      return reactions;
+    const filtered = (reactions || []).filter((reaction) => {
+      // Ignore if it's a paid emoji (custom_emoji_id present, emoji not string)
+      return typeof reaction === "string";
+    });
+
+    if (filtered.length > 0) {
+      return filtered;
     } else {
-      console.warn(
-        "⚠️ No available reactions from Telegram. Using full fallback list."
-      );
+      console.warn("⚠️ No usable unicode reactions. Using fallback list.");
       return fallbackReactions;
     }
   } catch (err) {
