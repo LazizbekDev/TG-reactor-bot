@@ -1,7 +1,9 @@
 import axios from "axios";
 
-export const getAIReactionForMessage = async (text) =>  {
-  const prompt = `Based on the tone and vibe of the following message, reply with the most suitable emoji from this list only: 😂, 😢, 🤯, 🔥, 💀, 👏, 👎, 😡, 🥱, 💔, 🤔.\n\nMessage: "${text}"\n\nOnly return the emoji.`;
+export const getAIReactionForMessage = async (text, validEmojis) => {
+  const prompt = `Based on the tone and vibe of the following message, reply with the most suitable emoji from this list only:\n${validEmojis.join(
+    ", "
+  )}.\n\nMessage: "${text}"\n\nOnly return the emoji.`;
 
   try {
     const res = await axios.post(
@@ -14,13 +16,38 @@ export const getAIReactionForMessage = async (text) =>  {
       }
     );
 
-    const emoji = res.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    return emoji || "🤔";
+    let emoji = res.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    console.log("AI raw reaction:", emoji);
+
+    // Ba'zida AI emoji + matn yuboradi: "😊 is a good choice" — buni tozalaymiz
+    if (!validEmojis.includes(emoji)) {
+      emoji = validEmojis.find((e) => emoji.includes(e));
+    }
+
+    return emoji || validEmojis[0];
   } catch (err) {
     console.error("AI reaction error:", err.message);
-    return "🤔";
+    return validEmojis[0];
   }
-}
+};
+
+export const getMessageType = (post) => {
+  if (post.photo) return "photo";
+  if (post.video) return "video";
+  if (post.audio) return "audio";
+  if (post.voice) return "voice";
+  if (post.document) return "document";
+  if (post.animation) return "animation";
+  if (post.poll) return "poll";
+  if (post.sticker) return "sticker";
+  if (post.contact) return "contact";
+  if (post.venue) return "venue";
+  if (post.location) return "location";
+  if (post.text) return "text";
+  if (post.caption) return "caption"; // fallback if caption boru media aniqlanmagan bo‘lsa
+  return "unknown";
+};
 
 // 🧠 Prompt Templates
 const PERSONALITY_PROMPT_TEMPLATE = (message) => `
@@ -63,3 +90,79 @@ export const getAIResponse = async (userMessage = null) => {
     return "😶";
   }
 };
+
+export const allEmojis = [
+  "❤",
+  "👍",
+  "👎",
+  "🔥",
+  "🥰",
+  "👏",
+  "😁",
+  "🤔",
+  "🤯",
+  "😱",
+  "🤬",
+  "😢",
+  "🎉",
+  "🤩",
+  "🤮",
+  "💩",
+  "🙏",
+  "👌",
+  "🕊",
+  "🤡",
+  "🥱",
+  "🥴",
+  "😍",
+  "🐳",
+  "❤‍🔥",
+  "🌚",
+  "🌭",
+  "💯",
+  "🤣",
+  "⚡",
+  "🍌",
+  "🏆",
+  "💔",
+  "🤨",
+  "😐",
+  "🍓",
+  "🍾",
+  "💋",
+  "🖕",
+  "😈",
+  "😴",
+  "😭",
+  "🤓",
+  "👻",
+  "👨‍💻",
+  "👀",
+  "🎃",
+  "🙈",
+  "😇",
+  "😨",
+  "🤝",
+  "✍",
+  "🤗",
+  "🫡",
+  "🎅",
+  "🎄",
+  "☃",
+  "💅",
+  "🤪",
+  "🗿",
+  "🆒",
+  "💘",
+  "🙉",
+  "🦄",
+  "😘",
+  "💊",
+  "🙊",
+  "😎",
+  "👾",
+  "🤷‍♂",
+  "🤷",
+  "🤷‍♀",
+  "😡",
+];

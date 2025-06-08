@@ -1,7 +1,12 @@
 import { Telegraf } from "telegraf";
 import dotenv from "dotenv";
 import express from "express";
-import { getAIReactionForMessage, getAIResponse } from "./utils.js";
+import {
+  allEmojis,
+  getAIReactionForMessage,
+  getAIResponse,
+  getMessageType,
+} from "./utils.js";
 
 dotenv.config();
 
@@ -11,11 +16,77 @@ app.use(express.json());
 
 let lastChatId = null;
 
-// 🤖 Gemini response
+const getAvailableReactions = async (chatId) => {
+  const fallbackReactions = allEmojis;
 
+  try {
+    const result = await bot.telegram.getChat(chatId);
+    const reactions = result.available_reactions;
+
+    if (Array.isArray(reactions) && reactions.length > 0) {
+      return reactions;
+    } else {
+      console.warn(
+        "⚠️ No available reactions from Telegram. Using full fallback list."
+      );
+      return fallbackReactions;
+    }
+  } catch (err) {
+    console.error("❌ Error fetching available reactions:", err.message);
+    return fallbackReactions;
+  }
+};
+
+const validEmojis = [
+  "😂",
+  "😢",
+  "🤯",
+  "🔥",
+  "💀",
+  "👏",
+  "👎",
+  "😡",
+  "🥱",
+  "💔",
+  "🤔",
+];
+// 🤖 Gemini response
 bot.start((ctx) => {
   ctx.reply("🤖 Heyy, wanna talk with me?");
   console.log("🤖 Bot started by user:", ctx.from.username);
+});
+
+// Yangi xabar kelganda reaction qo‘yish
+bot.on("channel_post", async (ctx) => {
+  const chatId = ctx.chat.id;
+  const post = ctx.channelPost;
+  const messageId = post.message_id;
+  const messageText = post.text || post.caption || "";
+  const messageType = getMessageType(post);
+  const contentForAI = messageText.trim() || `This is a ${messageType} post.`;
+
+  if (!messageText) {
+    console.log("No text in message, skipping...");
+    return;
+  }
+
+  try {
+    const availableEmojis = await getAvailableReactions(chatId);
+
+    let emoji = await getAIReactionForMessage(contentForAI, availableEmojis);
+
+    const safeEmoji = availableEmojis.includes(emoji) ? emoji : "🤔";
+
+    await ctx.telegram.setMessageReaction(chatId, messageId, [
+      {
+        type: "emoji",
+        emoji: safeEmoji,
+      },
+    ]);
+    console.log("✅ Reaction sent:", safeEmoji);
+  } catch (err) {
+    console.error("❌ Error in channel_post handler:", err.message);
+  }
 });
 
 // 💬 Reply on trigger
@@ -44,33 +115,22 @@ bot.on("message", async (ctx) => {
     reply_to_message_id: msg.message_id,
   });
 
-  // ✅ Bu yerda chatId va messageId'ni aniq qilib olish kerak:
+  // ✅ Reaction qo‘yish
   const chatId = ctx.chat.id;
   const messageId = ctx.message.message_id;
 
-  const emoji = await getAIReactionForMessage(ctx.message.text);
+  const emoji = await getAIReactionForMessage(ctx.message.text, validEmojis);
 
   if (emoji) {
-    const validEmojis = [
-      "😂",
-      "😢",
-      "🤯",
-      "🔥",
-      "💀",
-      "👏",
-      "👎",
-      "😡",
-      "🥱",
-      "💔",
-      "🤔",
-    ];
     const safeEmoji = validEmojis.includes(emoji) ? emoji : "🤔";
     console.log("AI chose:", emoji, "| Using:", safeEmoji);
     try {
-      await ctx.telegram.setMessageReaction(chatId, messageId, [{
-        type: "emoji",
-        emoji: safeEmoji,
-      }]);
+      await ctx.telegram.setMessageReaction(chatId, messageId, [
+        {
+          type: "emoji",
+          emoji: safeEmoji,
+        },
+      ]);
       console.log("✅ Reaction sent:", safeEmoji);
     } catch (err) {
       console.error("❌ Reaction error:", err.response?.data || err.message);
@@ -109,7 +169,9 @@ bot.telegram.getMe().then((botInfo) => {
   bot.options.username = botInfo.username;
   console.log("🤖 Bot username:", botInfo.username);
 
-  bot.launch({ allowedUpdates: ["message", "message_reaction"]});
+  bot.launch({
+    allowedUpdates: ["message", "message_reaction", "channel_post"],
+  });
   startRandomMessageSender();
   console.log("🤖 Bot launched via Telegraf");
 });
