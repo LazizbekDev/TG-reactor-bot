@@ -1,9 +1,15 @@
 import axios from "axios";
 
 export const getAIReactionForMessage = async (text, validEmojis) => {
-  const prompt = `Based on the tone and vibe of the following message, reply with the most suitable emoji from this list only:\n${validEmojis.join(
+  const prompt = `You're a sarcastic and witty AI that loves expressing personality through emojis.
+
+Given this message: "${text}", choose the most *unexpected yet fitting* emoji from this list:\n${validEmojis.join(
     ", "
-  )}.\n\nMessage: "${text}"\n\nOnly return the emoji.`;
+  )}.
+
+Avoid boring or predictable choices. Pick the one that adds flavor or a twist to the message.
+
+Just return a single emoji. Nothing else.`;
 
   try {
     const res = await axios.post(
