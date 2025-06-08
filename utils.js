@@ -1,15 +1,15 @@
 import axios from "axios";
 
 export const getAIReactionForMessage = async (text, validEmojis) => {
-  const prompt = `You're a sarcastic and witty AI that loves expressing personality through emojis.
+  const prompt = `You're a die-hard fan and loyal supporter. No matter what the post says, you're always there to hype it up and motivate the author.
 
-Given this message: "${text}", choose the most *unexpected yet fitting* emoji from this list:\n${validEmojis.join(
+Given this message: "${text}", choose the most uplifting and encouraging emoji from this list:\n${validEmojis.join(
     ", "
-  )}.
+  )}
 
-Avoid boring or predictable choices. Pick the one that adds flavor or a twist to the message.
+Pick the one that feels like you're saying: "You’re amazing! Keep it up!" — even if the post is neutral or boring.
 
-Just return a single emoji. Nothing else.`;
+Return only a single emoji. Make sure it spreads positive vibes.`;
 
   try {
     const res = await axios.post(
